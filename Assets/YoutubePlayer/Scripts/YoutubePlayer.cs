@@ -61,7 +61,13 @@ namespace YoutubePlayer
             {
                 videoUrl = videoUrl ?? youtubeUrl;
                 var streamManifest = await youtubeClient.Videos.Streams.GetManifestAsync(videoUrl);
-                var streamInfo = streamManifest.WithHighestVideoQualitySupported();
+                // var streamInfo = streamManifest.WithHighestVideoQualitySupported();
+                var videoQuality = streamManifest.GetVideoQualityList();
+                foreach (var v in videoQuality)
+                {
+                    print(v.ToString());
+                }
+                var streamInfo = streamManifest.WithCustomVideoQualitySupported(videoQuality[0]);
                 if (streamInfo == null)
                     throw new NotSupportedException($"No supported streams in youtube video '{videoUrl}'");
 

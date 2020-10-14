@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using YoutubeExplode.Videos.ClosedCaptions;
 using YoutubeExplode.Videos.Streams;
+using UnityEngine;
 
 namespace YoutubePlayer
 {
@@ -17,6 +18,7 @@ namespace YoutubePlayer
         {
             if(streamInfos == null)
                 throw new ArgumentNullException(nameof(streamInfos));
+
             return streamInfos
                 .Where(info => info.Container == Container.Mp4)
                 .Select(info => info).OrderByDescending(s => s.VideoQuality).FirstOrDefault();
@@ -32,7 +34,24 @@ namespace YoutubePlayer
                 throw new ArgumentNullException(nameof(streamManifest));
             return streamManifest.GetMuxed().WithHighestVideoQualitySupported();
         }
+        public static List<VideoQuality> GetVideoQualityList(this StreamManifest streamManifest)
+        {
+            if(streamManifest == null)
+                throw new ArgumentNullException(nameof(streamManifest));
 
+            return streamManifest.GetMuxed().GetAllVideoQualities().ToList();
+        }
+    
+        /// <summary>
+        /// Gets the muxed stream with custom video quality and Mp4 container.
+        /// Returns null if sequence is empty.
+        /// </summary>
+        public static MuxedStreamInfo WithCustomVideoQualitySupported(this StreamManifest streamManifest,VideoQuality quality)
+        {
+            if(streamManifest == null)
+                throw new ArgumentNullException(nameof(streamManifest));
+            return streamManifest.GetMuxed().Where(info => info.VideoQuality == quality).Select(info => info).FirstOrDefault();
+        }
         /// <summary>
         /// Convert closed captions to SRT format.
         /// </summary>
