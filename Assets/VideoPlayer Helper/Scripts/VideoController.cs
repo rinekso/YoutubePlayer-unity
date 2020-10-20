@@ -23,7 +23,7 @@ namespace Unity.VideoHelper
         [Header("Optional")]
 
         [SerializeField]
-        private VideoPlayer videoPlayer;
+        public VideoPlayer videoPlayer;
 
         [SerializeField]
         private AudioSource audioSource;
@@ -300,9 +300,9 @@ namespace Unity.VideoHelper
 
         private void OnError(VideoPlayer source, string message)
         {
-#if VIDEOPLAYER_DEBUG
+        #if VIDEOPLAYER_DEBUG
             Debug.LogError("[Video Controller] " + message);
-#endif
+        #endif
         }
 
         private void SubscribeToVideoPlayerEvents()
@@ -310,7 +310,7 @@ namespace Unity.VideoHelper
             if (videoPlayer == null)
                 return;
 
-            videoPlayer.errorReceived += OnError;
+            // videoPlayer.errorReceived += OnError;
             videoPlayer.prepareCompleted += OnPrepareCompleted;
             videoPlayer.started += OnStarted;
             videoPlayer.loopPointReached += OnFinished;
@@ -321,7 +321,7 @@ namespace Unity.VideoHelper
             if (videoPlayer == null)
                 return;
 
-            videoPlayer.errorReceived -= OnError;
+            // videoPlayer.errorReceived -= OnError;
             videoPlayer.prepareCompleted -= OnPrepareCompleted;
             videoPlayer.started -= OnStarted;
             videoPlayer.loopPointReached -= OnFinished;

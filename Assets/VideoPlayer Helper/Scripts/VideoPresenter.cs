@@ -39,6 +39,7 @@ namespace Unity.VideoHelper
         public Transform Screen;
         public Transform ControlsPanel;
         public Transform LoadingIndicator;
+        public Transform PlayPanel;
         public Transform Thumbnail;
         public Timeline Timeline;
         public Slider Volume;
@@ -91,57 +92,78 @@ namespace Unity.VideoHelper
 
         private void Start()
         {
-            controller = GetComponent<VideoController>();
+            try{
+                controller = GetComponent<VideoController>();
 
-            if (controller == null)
-            {
-                Debug.Log("There is no video controller attached.");
-                DestroyImmediate(this);
-                return;
+                if (controller == null)
+                {
+                    Debug.Log("There is no video controller attached.");
+                    DestroyImmediate(this);
+                    return;
+                }
+
+                controller.OnStartedPlaying.AddListener(OnStartedPlaying);
+
+                Volume.onValueChanged.AddListener(OnVolumeChanged);
+
+                // Thumbnail.OnClick(Prepare);
+                MuteUnmute.OnClick(ToggleMute);
+
+                PlayPause.OnClick(ToggleIsPlaying);
+                NormalFullscreen.OnClick(ToggleFullscreen);
+
+
+            #if UNITY_WEBGL
+                // FIX for not being able to go fullscreen in WebGL. See DirectClickRouter for details.
+                Screen.gameObject.AddComponent<DirectClickRouter>();
+            #endif
+
+                // Screen.OnDoubleClick(ToggleFullscreen);
+                // Screen.OnClick(ToggleIsPlaying);
+
+                ControlsPanel.SetGameObjectActive(false);
+                LoadingIndicator.SetGameObjectActive(true);
+                // Thumbnail.SetGameObjectActive(true);
+
+                TargetDisplay = targetDisplay;
+
+                Array.Sort(Volumes, (v1, v2) =>
+                {
+                    if (v1.Minimum > v2.Minimum)
+                        return 1;
+                    else if (v1.Minimum == v2.Minimum)
+                        return 0;
+                    else
+                        return -1;
+                });
+            }catch(Exception e){
+                print(e);
             }
-
-            controller.OnStartedPlaying.AddListener(OnStartedPlaying);
-
-            Volume.onValueChanged.AddListener(OnVolumeChanged);
-
-            Thumbnail.OnClick(Prepare);
-            MuteUnmute.OnClick(ToggleMute);
-
-            PlayPause.OnClick(ToggleIsPlaying);
-            NormalFullscreen.OnClick(ToggleFullscreen);
-
-
-#if UNITY_WEBGL
-            // FIX for not being able to go fullscreen in WebGL. See DirectClickRouter for details.
-            Screen.gameObject.AddComponent<DirectClickRouter>();
-#endif
-
-            Screen.OnDoubleClick(ToggleFullscreen);
-            Screen.OnClick(ToggleIsPlaying);
-
-            ControlsPanel.SetGameObjectActive(false);
-            LoadingIndicator.SetGameObjectActive(false);
-            Thumbnail.SetGameObjectActive(true);
-
-            TargetDisplay = targetDisplay;
-
-            Array.Sort(Volumes, (v1, v2) =>
-            {
-                if (v1.Minimum > v2.Minimum)
-                    return 1;
-                else if (v1.Minimum == v2.Minimum)
-                    return 0;
-                else
-                    return -1;
-            });
         }
-
+        bool set = false;
         private void Update()
         {
             CheckKeys();
 
+            if(controller.videoPlayer.GetComponent<YoutubePlayer.YoutubePlayer>().ready && !set){
+                ControlSwitch(true);
+                set = true;
+            }else if(!controller.videoPlayer.GetComponent<YoutubePlayer.YoutubePlayer>().ready && set){
+                set = false;
+                ControlSwitch(false);
+            }
+
             if (controller.IsPlaying)
                 Timeline.Position = controller.NormalizedTime;
+        }
+        public void ControlSwitch(bool stat){
+            LoadingIndicator.SetGameObjectActive(!stat);
+            PlayPanel.SetGameObjectActive(stat);
+            ControlsPanel.SetGameObjectActive(stat);
+        }
+        public void PlayVideo(){
+            PlayPanel.SetGameObjectActive(false);
+            ToggleIsPlaying();
         }
 
 #endregion
@@ -166,7 +188,7 @@ namespace Unity.VideoHelper
 
         private void Prepare()
         {
-            Thumbnail.SetGameObjectActive(false);
+            // Thumbnail.SetGameObjectActive(false);
             LoadingIndicator.SetGameObjectActive(true);
         }
 

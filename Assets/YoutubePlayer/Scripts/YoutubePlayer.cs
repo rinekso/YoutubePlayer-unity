@@ -8,6 +8,10 @@ using UnityEngine.Video;
 using YoutubeExplode;
 using YoutubeExplode.Videos.ClosedCaptions;
 using YoutubeExplode.Videos.Streams;
+using UnityEngine.UI;
+using TMPro;
+using System.Collections.Generic;
+using Unity;
 
 namespace YoutubePlayer
 {
@@ -17,6 +21,7 @@ namespace YoutubePlayer
     [RequireComponent(typeof(VideoPlayer))]
     public class YoutubePlayer : MonoBehaviour
     {
+        public TMP_Dropdown dropdownResolution;
         /// <summary>
         /// Youtube url (e.g. https://www.youtube.com/watch?v=VIDEO_ID)
         /// </summary>
@@ -55,6 +60,9 @@ namespace YoutubePlayer
         /// <param name="videoUrl">Youtube url (e.g. https://www.youtube.com/watch?v=VIDEO_ID)</param>
         /// <returns>A Task to await</returns>
         /// <exception cref="NotSupportedException">When the youtube url doesn't contain any supported streams</exception>
+        List<string> labels = new List<string>();
+        int qualityChoosen;
+        public bool ready=false;
         public async Task PlayVideoAsync(string videoUrl = null)
         {
             try
@@ -63,11 +71,16 @@ namespace YoutubePlayer
                 var streamManifest = await youtubeClient.Videos.Streams.GetManifestAsync(videoUrl);
                 // var streamInfo = streamManifest.WithHighestVideoQualitySupported();
                 var videoQuality = streamManifest.GetVideoQualityList();
-                foreach (var v in videoQuality)
-                {
-                    print(v.ToString());
+                if(labels.Count == 0){
+                    foreach (var v in videoQuality)
+                    {
+                        labels.Add(v.ToString());
+                    }
+                    dropdownResolution.ClearOptions();
+                    dropdownResolution.AddOptions(labels);
+                    qualityChoosen = 0;
                 }
-                var streamInfo = streamManifest.WithCustomVideoQualitySupported(videoQuality[0]);
+                var streamInfo = streamManifest.WithCustomVideoQualitySupported(videoQuality[qualityChoosen]);
                 if (streamInfo == null)
                     throw new NotSupportedException($"No supported streams in youtube video '{videoUrl}'");
 
@@ -80,11 +93,20 @@ namespace YoutubePlayer
                 videoPlayer.Play();
                 youtubeUrl = videoUrl;
                 YoutubeVideoStarting?.Invoke(youtubeUrl);
+                videoPlayer.Stop();
+                ready = true;
+                
             }
             catch (Exception ex)
             {
                 Debug.LogException(ex);
             }
+        }
+        public async void OnChangeRes(TMP_Dropdown dropdownVal){
+            qualityChoosen = dropdownVal.value;
+            ready = false;
+            videoPlayer.Stop();
+            await PlayVideoAsync();
         }
 
         /// <summary>
